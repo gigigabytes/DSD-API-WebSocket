@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de CEP</title>
+    <script>
+        let socket;
+
+        function connectWebSocket() {
+            socket = new WebSocket('ws://localhost:8000/ws/cep/');
+            
+            socket.onopen = function (e) {
+                console.log('Conexão WebSocket aberta');
+            };
+
+            socket.onmessage = function (e) {
+                const data = JSON.parse(e.data);
+                document.getElementById('response').innerHTML = data.message;
+            };
+
+            socket.onclose = function (e) {
+                console.log('Conexão WebSocket fechada');
+            };
+        }
+
+        function sendCEP() {
+            const cep = document.getElementById('cep-input').value;
+            const message = JSON.stringify({'cep': cep});
+            socket.send(message);
+        }
+
+        function consultarCEP() {
+            const cep = document.getElementById('cep-input').value;
+            fetch(`/api/cep/${cep}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('api-response').innerHTML = JSON.stringify(data.data);
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+    </script>
+</head>
+<body onload="connectWebSocket()">
+    <h1>Consulta de CEP</h1>
+    <div>
+        <label for="cep-input">Digite o CEP:</label>
+        <input type="text" id="cep-input" placeholder="00000-000" />
+        <button onclick="consultarCEP()">Consultar CEP via API</button>
+        <button onclick="sendCEP()">Consultar CEP via WebSocket</button>
+    </div>
+    <div>
+        <h2>Resposta da API:</h2>
+        <p id="api-response"></p>
+    </div>
+    <div>
+        <h2>Resposta via WebSocket:</h2>
+        <p id="response"></p>
+    </div>
+</body>
+</html>
