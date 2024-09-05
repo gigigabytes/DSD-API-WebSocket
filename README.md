@@ -1,8 +1,8 @@
 # Tarefa: Implementação de Transmissão de Dados com WebSocket
- 
+
 ## Meta
 Implementar, por meio de um estudo de caso, a transmissão de dados com WebSocket.
- 
+
 ## Regras do API Gateway
 - Desenvolver ao menos um API Gateway.
 - Implementar o conceito de HATEOAS no Gateway.
@@ -15,13 +15,35 @@ Implementar, por meio de um estudo de caso, a transmissão de dados com WebSocke
   - Classe que fornece um endpoint WebSocket e gerencia o ciclo de vida.
 - Criar o cliente:
   - Instanciar o objeto WebSocket em um navegador Web e gerenciar o ciclo de vida.
- 
-## Outras Instruções
-- Criar projeto no GitHub e compartilhar o link.
-- **Apresentação presencial**:
-  - Responder dúvidas e permitir que o código seja testado pelos presentes.
-- Estudo de caso:
-  - Livre escolha com os seguintes casos de sugestão:
-    - Transmissão de arquivo (texto, imagem, vídeo).
-    - Implementação de um jogo simples entre players remotos.
-    - Sistemas de gerenciamento de contas online.
+
+## Arquivos do Projeto
+
+### 1. `api.py`
+Contém o código do API Gateway implementado com FastAPI. Inclui endpoints para interagir com microsserviços e aplicar autenticação JWT.
+
+### 2. `websocket.py`
+Implementa o servidor WebSocket, incluindo a autenticação JWT e o gerenciamento de mensagens.
+
+### 3. `cliente.html`
+Página HTML que funciona como cliente WebSocket, permitindo enviar mensagens e receber respostas do servidor WebSocket.
+
+### 4. `generate_secret_key.py`
+Script para gerar uma chave secreta para JWT. Execute este script para gerar uma chave segura e substitua a chave no arquivo `api.py` e `websocket.py`.
+
+## Rodando o Projeto
+
+1. **Instale as dependências**:
+   - Certifique-se de que o Python está instalado.
+   - Crie e ative um ambiente virtual:
+     ```bash
+     python -m venv venv
+     source venv/bin/activate  # Em Windows: venv\Scripts\activate
+     ```
+   - Instale as bibliotecas necessárias:
+     ```bash
+     pip install fastapi uvicorn pyjwt requests
+     ```
+
+2. **Inicie o servidor API Gateway**:
+   ```bash
+   uvicorn api:app --host 0.0.0.0 --port 8001
