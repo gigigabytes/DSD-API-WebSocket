@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Gateway Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .book {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Buscar Livros</h1>
+    <form id="searchForm">
+        <label for="searchTerm">Termo de Busca:</label>
+        <input type="text" id="searchTerm" name="searchTerm" required>
+        <button type="submit">Buscar</button>
+    </form>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const searchTerm = document.getElementById('searchTerm').value;
+            fetch('http://localhost:5000/books', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ search_param: searchTerm })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+                if (data.items) {
+                    data.items.forEach(item => {
+                        const bookDiv = document.createElement('div');
+                        bookDiv.classList.add('book');
+                        bookDiv.innerHTML = `
+                            <h3>${item.volumeInfo.title}</h3>
+                            <p>${item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Autor desconhecido'}</p>
+                            <p>${item.volumeInfo.description ? item.volumeInfo.description : 'Sem descrição'}</p>
+                        `;
+                        resultsDiv.appendChild(bookDiv);
+                    });
+                } else {
+                    resultsDiv.innerHTML = '<p>Nenhum resultado encontrado.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                document.getElementById('results').innerHTML = '<p>Ocorreu um erro ao buscar os livros.</p>';
+            });
+        });
+    </script>
+</body>
+</html>

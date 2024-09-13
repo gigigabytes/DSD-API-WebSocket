@@ -1,2 +1,8 @@
 ./venv
-venv
+.venv
+microservice/microservice/__pycache__
+/book_notification_project/microservice/livros/__pycache__
+/book_notification_project/microservice/livros/migrations/__pycache__
+/book_notification_project/microservice/microservice/__pycache__
+/book_notification_project/microservice/livros/migrations/0001_initial.py
+/book_notification_project/microservice/db.sqlite3
