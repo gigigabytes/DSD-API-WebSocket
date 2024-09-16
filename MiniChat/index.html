@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat WebSocket</title>
+    <style>
+        #messages div, #historyMessages div {
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .username {
+            font-weight: bold;
+        }
+        .time {
+            color: gray;
+            font-size: 0.8em;
+        }
+        #history {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat WebSocket</h1>
+    <div id="messages"></div>
+    
+    <!-- Campo de nome será solicitado uma vez -->
+    <div id="nameSection">
+        <input id="usernameInput" type="text" placeholder="Digite seu nome..." />
+        <button id="enterChatBtn">Entrar no Chat</button>
+    </div>
+    
+    <!-- Campo de mensagem só é mostrado depois que o nome for inserido -->
+    <div id="chatSection" style="display:none;">
+        <input id="messageInput" type="text" placeholder="Digite sua mensagem..." />
+        <button id="sendBtn">Enviar</button>
+    </div>
+
+    <!-- Área de histórico de mensagens -->
+    <div id="history">
+        <h3>Histórico de Mensagens</h3>
+        <div id="historyMessages"></div>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://localhost:8080');
+        let username = null;  // Nome do usuário será salvo aqui
+
+        // Função para adicionar mensagens ao histórico
+        function addMessageToHistory(username, message, time) {
+            const historyMessagesDiv = document.getElementById('historyMessages');
+            const messageDiv = document.createElement('div');
+
+            // Criar elementos para nome, mensagem e hora
+            const usernameElement = document.createElement('div');
+            usernameElement.classList.add('username');
+            usernameElement.textContent = username;
+
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+
+            const timeElement = document.createElement('div');
+            timeElement.classList.add('time');
+            timeElement.textContent = time;
+
+            // Adiciona os elementos à div de mensagem
+            messageDiv.appendChild(usernameElement);
+            messageDiv.appendChild(messageElement);
+            messageDiv.appendChild(timeElement);
+
+            // Adiciona a nova mensagem ao histórico
+            historyMessagesDiv.appendChild(messageDiv);
+        }
+
+        // Função para exibir mensagens do log no histórico
+        function displayMessageLog() {
+            const messageLog = JSON.parse(localStorage.getItem('messageLog')) || [];
+            messageLog.forEach(log => {
+                addMessageToHistory(log.username, log.message, log.time);
+            });
+        }
+
+        // Função para atualizar o log no localStorage
+        function updateMessageLog(username, message, time) {
+            const messageLog = JSON.parse(localStorage.getItem('messageLog')) || [];
+            messageLog.push({ username, message, time });
+            localStorage.setItem('messageLog', JSON.stringify(messageLog));
+        }
+
+        socket.addEventListener('open', (event) => {
+            console.log('Conectado ao servidor WebSocket');
+        });
+
+        socket.addEventListener('message', (event) => {
+            const data = event.data;
+            const parsedMessage = JSON.parse(data);
+            const { username, message, time } = parsedMessage;
+
+            const messagesDiv = document.getElementById('messages');
+            const newMessageDiv = document.createElement('div');
+
+            // Criar elementos para nome, mensagem e hora
+            const usernameElement = document.createElement('div');
+            usernameElement.classList.add('username');
+            usernameElement.textContent = username;
+
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+
+            const timeElement = document.createElement('div');
+            timeElement.classList.add('time');
+            timeElement.textContent = time;
+
+            // Adiciona os elementos à div de mensagem
+            newMessageDiv.appendChild(usernameElement);
+            newMessageDiv.appendChild(messageElement);
+            newMessageDiv.appendChild(timeElement);
+
+            // Adiciona a nova mensagem à lista de mensagens
+            messagesDiv.appendChild(newMessageDiv);
+
+            // Atualiza o log e o histórico
+            updateMessageLog(username, message, time);
+            addMessageToHistory(username, message, time);
+        });
+
+        // Função para entrar no chat após definir o nome
+        const enterChatBtn = document.getElementById('enterChatBtn');
+        const usernameInput = document.getElementById('usernameInput');
+        const nameSection = document.getElementById('nameSection');
+        const chatSection = document.getElementById('chatSection');
+
+        enterChatBtn.addEventListener('click', () => {
+            username = usernameInput.value.trim();
+
+            if (username) {
+                // Esconde a seção de nome e mostra a seção de chat
+                nameSection.style.display = 'none';
+                chatSection.style.display = 'block';
+
+                // Exibe o histórico de mensagens
+                displayMessageLog();
+            } else {
+                alert("Por favor, insira um nome válido!");
+            }
+        });
+
+        // Enviar mensagem
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+
+        sendBtn.addEventListener('click', () => {
+            const message = messageInput.value;
+
+            if (message) {
+                // Enviar o nome do usuário e a mensagem
+                const messageData = JSON.stringify({ username, message });
+                socket.send(messageData);
+
+                // Limpar campo de mensagem após o envio
+                messageInput.value = '';
+            } else {
+                alert("Por favor, insira uma mensagem!");
+            }
+        });
+    </script>
+</body>
+</html>
