@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .notification {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Usuário:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Senha:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <div id="message"></div> <!-- Div para exibir a mensagem de sucesso ou erro -->
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Previne o comportamento padrão do form
+            const username = document.getElementById('username').value; // Coleta o usuário
+            const password = document.getElementById('password').value; // Coleta a senha
+            const messageDiv = document.getElementById('message'); // Div onde aparecerá a mensagem
+
+            // Faz a requisição para obter o token JWT
+            fetch('http://127.0.0.1:8000/api/token/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password }) // Envia os dados de login
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Se receber o token de acesso
+                if (data.access) {
+                    localStorage.setItem('token', data.access); // Armazena o token no localStorage
+                    messageDiv.innerHTML = '<div class="notification">Login bem-sucedido! Redirecionando...</div>';
+                    
+                    // Redireciona para a página de busca de livros após 2 segundos
+                    setTimeout(function() {
+                        window.location.href = "busca_livro.html";
+                    }, 2000);
+                } else {
+                    // Exibe uma mensagem de erro caso o login falhe
+                    messageDiv.innerHTML = '<div class="notification error">Erro no login. Tente novamente.</div>';
+                }
+            })
+            .catch(error => {
+                // Exibe uma mensagem de erro caso haja algum problema com a conexão
+                messageDiv.innerHTML = '<div class="notification error">Erro de conexão. Tente novamente.</div>';
+            });
+        });
+    </script>
+</body>
+</html>

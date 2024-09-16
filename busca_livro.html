@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Livros</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .book {
+            margin-bottom: 10px;
+        }
+        .notification {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Buscar Livros</h1>
+    <form id="searchForm">
+        <label for="searchTerm">Termo de Busca:</label>
+        <input type="text" id="searchTerm" name="searchTerm" required>
+        <button type="submit">Buscar</button>
+    </form>
+    <div id="results"></div>
+
+    <!-- Div para mostrar notificações via WebSocket -->
+    <div id="notifications"></div>
+
+    <script>
+        // WebSocket para notificações em tempo real
+        const socket = new WebSocket('ws://localhost:8000/ws/livros/');
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const notificationsDiv = document.getElementById('notifications');
+            const notificationDiv = document.createElement('div');
+            notificationDiv.classList.add('notification');
+            notificationDiv.textContent = data.message;
+            notificationsDiv.appendChild(notificationDiv);
+        };
+
+        socket.onclose = function(event) {
+            console.error('WebSocket fechado: ', event);
+        };
+
+        socket.onerror = function(event) {
+            console.error('WebSocket erro: ', event);
+        };
+
+        // Função para buscar livros na API
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const searchTerm = document.getElementById('searchTerm').value;
+            fetch('http://localhost:5000/books', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ search_param: searchTerm })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+                if (data.items) {
+                    data.items.forEach(item => {
+                        const bookDiv = document.createElement('div');
+                        bookDiv.classList.add('book');
+                        bookDiv.innerHTML = `
+                            <h3>${item.volumeInfo.title}</h3>
+                            <p>${item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Autor desconhecido'}</p>
+                            <p>${item.volumeInfo.description ? item.volumeInfo.description : 'Sem descrição'}</p>
+                            <button onclick="fazerEmprestimo('${item.volumeInfo.title}')">Fazer Empréstimo</button>
+                        `;
+                        resultsDiv.appendChild(bookDiv);
+                    });
+                } else {
+                    resultsDiv.innerHTML = '<p>Nenhum resultado encontrado.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                document.getElementById('results').innerHTML = '<p>Ocorreu um erro ao buscar os livros.</p>';
+            });
+        });
+
+        // Função para criar empréstimo
+        function fazerEmprestimo(livro) {
+            const token = localStorage.getItem('token');  // Pega o token JWT armazenado
+            fetch('http://127.0.0.1:8000/api/emprestimos/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,  // Inclui o JWT no cabeçalho
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ livro })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Empréstimo criado com sucesso');
+                // Notificar via WebSocket
+                const socket = new WebSocket('ws://localhost:8000/ws/livros/');
+                socket.onopen = function() {
+                    socket.send(JSON.stringify({ message: `O livro ${livro} foi emprestado.` }));
+                };
+            })
+            .catch(error => {
+                alert('Erro ao criar o empréstimo');
+            });
+        }
+    </script>
+</body>
+</html>
