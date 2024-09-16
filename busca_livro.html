@@ -82,7 +82,7 @@
                             <h3>${item.volumeInfo.title}</h3>
                             <p>${item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Autor desconhecido'}</p>
                             <p>${item.volumeInfo.description ? item.volumeInfo.description : 'Sem descrição'}</p>
-                            <button onclick="fazerEmprestimo('${item.volumeInfo.title}')">Fazer Empréstimo</button>
+                            <button onclick="fazerEmprestimo(${item.id})">Fazer Empréstimo</button>  <!-- Usando o ID aqui -->
                         `;
                         resultsDiv.appendChild(bookDiv);
                     });
@@ -97,7 +97,7 @@
         });
 
         // Função para criar empréstimo
-        function fazerEmprestimo(livro) {
+                function fazerEmprestimo(livroId) {
             const token = localStorage.getItem('token');  // Pega o token JWT armazenado
             fetch('http://127.0.0.1:8000/api/emprestimos/', {
                 method: 'POST',
@@ -105,21 +105,17 @@
                     'Authorization': `Bearer ${token}`,  // Inclui o JWT no cabeçalho
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ livro })
+                body: JSON.stringify({ livro: livroId })  // Envia o id do livro, não o título
             })
             .then(response => response.json())
             .then(data => {
                 alert('Empréstimo criado com sucesso');
-                // Notificar via WebSocket
-                const socket = new WebSocket('ws://localhost:8000/ws/livros/');
-                socket.onopen = function() {
-                    socket.send(JSON.stringify({ message: `O livro ${livro} foi emprestado.` }));
-                };
             })
             .catch(error => {
                 alert('Erro ao criar o empréstimo');
             });
         }
+
     </script>
 </body>
 </html>

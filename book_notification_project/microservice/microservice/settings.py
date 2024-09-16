@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
-ASGI_APPLICATION = "microservice.asgi.application"
+ASGI_APPLICATION = "book_notification_project.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
@@ -83,6 +83,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+ALLOWED_HOSTS = ['*']
 
 ROOT_URLCONF = 'microservice.urls'
 
