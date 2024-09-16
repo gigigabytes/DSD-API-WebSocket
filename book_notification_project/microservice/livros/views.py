@@ -5,6 +5,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Livro, Usuario,Estante, Emprestimo
 from .serializers import LivroSerializer, UsuarioSerializer, EstanteSerializer, EmprestimoSerializer, CadastroSerializer, LoginSerializer
 from .services import LivroService, EstanteService, UsuarioService, EmprestimoService
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from rest_framework.permissions import IsAuthenticated
 
 
 class LivroViewSet(viewsets.ModelViewSet):
@@ -30,17 +33,36 @@ class EmprestimoViewSet(viewsets.ModelViewSet):
     serializer_class = EmprestimoSerializer
 
     def create(self, request):
-        livro_id = request.data.get('livro')
-        user  = request.user
-        usuario = Usuario.objects.get(nome=user.username)
+            livro_id = request.data.get('livro')
+            usuario = request.user
+            emprestimo = EmprestimoService.novo_emprestimo(livro_id, usuario)
+            serializer = EmprestimoSerializer(emprestimo)
 
-        emprestimo = EmprestimoService.novo_emprestimo(livro_id, usuario)
-        serializer = EmprestimoSerializer(emprestimo)
-        return Response(serializer.data, status= status.HTTP_201_CREATED)
-    
+            # Enviar notificação via WebSocket
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'notifications',  # Nome do grupo do WebSocket
+                {
+                    'type': 'notify_users',
+                    'message': f'{usuario.username} fez um empréstimo do livro {emprestimo.livro.titulo}.'
+                }
+            )
+
+            return Response(serializer.data, status= status.HTTP_201_CREATED)
+
     def devolve(self, request, pk=None):
         emprestimo = EmprestimoService.devolverLivro(pk)
         serializer = EmprestimoSerializer(emprestimo)
+
+        # Enviar notificação via WebSocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "book_notifications", {
+                "type": "notify_group",
+                "message": f"O livro '{emprestimo.livro.titulo}' foi devolvido!"
+            }
+        )
+
         return Response(serializer.data)
 
 class CadastroView(APIView):

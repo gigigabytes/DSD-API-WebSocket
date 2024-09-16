@@ -15,6 +15,15 @@
         .book {
             margin-bottom: 10px;
         }
+        .notification {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -26,7 +35,95 @@
     </form>
     <div id="results"></div>
 
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Usuário:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Senha:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <h2>Fazer Empréstimo</h2>
+    <form id="emprestimoForm">
+        <label for="livro">Livro:</label>
+        <input type="text" id="livro" name="livro" required>
+        <button type="submit">Fazer Empréstimo</button>
+    </form>
+
+    <!-- Div para mostrar notificações via WebSocket -->
+    <div id="notifications"></div>
+
     <script>
+        // WebSocket para notificações em tempo real
+        const socket = new WebSocket('ws://localhost:8000/ws/livros/');
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const notificationsDiv = document.getElementById('notifications');
+            const notificationDiv = document.createElement('div');
+            notificationDiv.classList.add('notification');
+            notificationDiv.textContent = data.message;
+            notificationsDiv.appendChild(notificationDiv);
+        };
+
+        socket.onclose = function(event) {
+            console.error('WebSocket fechado: ', event);
+        };
+
+        socket.onerror = function(event) {
+            console.error('WebSocket erro: ', event);
+        };
+
+        // Função para login e autenticação com JWT
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            fetch('http://127.0.0.1:8000/api/token/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access) {
+                    localStorage.setItem('token', data.access);
+                    alert('Login bem-sucedido!');
+                } else {
+                    alert('Erro no login');
+                }
+            });
+        });
+
+        // Função para criar empréstimo
+        document.getElementById('emprestimoForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const livro = document.getElementById('livro').value;
+            const token = localStorage.getItem('token');  // Pega o token JWT armazenado
+
+            fetch('http://127.0.0.1:8000/api/emprestimos/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,  // Inclui o JWT no cabeçalho
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    livro: livro
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Empréstimo criado com sucesso');
+            })
+            .catch(error => {
+                alert('Erro ao criar o empréstimo');
+            });
+        });
+
+        // Função para buscar livros na API
         document.getElementById('searchForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const searchTerm = document.getElementById('searchTerm').value;

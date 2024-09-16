@@ -1,0 +1,9 @@
+Django==4.2.7
+djangorestframework
+channels
+channels_redis
+drf-yasg
+Flask
+Flask-Cors
+requests
+djangorestframework-simplejwt

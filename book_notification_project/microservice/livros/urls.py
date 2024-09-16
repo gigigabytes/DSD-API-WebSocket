@@ -5,8 +5,7 @@ from .views import LoginView, CadastroView
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-
-
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = DefaultRouter()
 router.register(r'livros',LivroViewSet)
@@ -33,4 +32,6 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout= 0), name = 'schema-redoc'),
     path('register/', CadastroView.as_view(),name = 'register'),
     path('login/', LoginView.as_view(), name= 'login'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
